@@ -1,0 +1,51 @@
+function [system, t, x] = fSolveDynamics(system, control, t_end)
+    % resave
+    len = length(system.tsa);
+    state = zeros(1,4*len)';
+    for ii=1:len
+        state((1:4)+4*(ii-1)) = system.tsa(ii).state(1,:);
+    end
+    % calculate control
+%     u = ...
+    % MAIN SOLVER
+    duration = 5;
+control_freq = 100;
+
+n = duration*control_freq;
+time = linspace(0,duration,n*1000);
+
+x = zeros(n*1000,8);
+T = zeros(n*1000,2);
+u_ar = zeros(n*1000,2);
+x1_des = 0.05 + 0.02*sin(2*time);
+x2_des = 0.03 + 0.02*sin(2*time);
+x_0 = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]';
+optns = odeset('RelTol',1e-12,'AbsTol',1e-12,'NormControl','on');
+for i = 1:n
+    ind_l = (i-1)*1000 + 1;
+    ind_g = (i-1)*1000 + 1000;
+    time(ind_g)
+    t_int = time(ind_l:ind_g);
+    x_des1 = 0.05 + 0.02*sin(2*time(ind_g));
+    x_des2 = 0.03 + 0.02*sin(2*time(ind_g));
+    u = Control_b_extend_pd_p(x_0,x_des1,x_des2,robot);
+    u_ar(ind_l:ind_g,1) = u(1);
+    u_ar(ind_l:ind_g,2) = u(2);
+    [t,x(ind_l:ind_g,:),T(ind_l:ind_g,:)] = ode45( @(t,state) system_dynamics(system, t, state, control),t_int,x_0,optns);
+    x_0 = x(ind_g,:);
+end
+
+    [t, x] = ode45(@(t,state) system_dynamics(system, t, state, control),...
+        linspace(0,t_end,1e3), state);
+    % re-save variables for convenience
+    for ii=1:len
+        system.tsa(ii).state    = x(:,(1:4)+4*(ii-1));
+    end    
+    
+%     [dstate, T] = system_dynamics(system, t, x, control);
+%     for ii=1:len
+%         system.tsa(ii).dstate   = dstate((1:4)+4*(ii-1),:);        
+%         system.tsa(ii).T        = T(ii,:);  
+%     end
+end
+
